@@ -1,0 +1,11 @@
+com/alibaba/work/faas/util/YidaConnectorUtil$ConnectorTypeEnum.class
+com/alibaba/work/faas/util/HttpUtil$1.class
+com/alibaba/work/faas/common/FaasResponse.class
+com/alibaba/work/faas/util/HttpUtil.class
+com/alibaba/work/faas/FaasEntry.class
+com/alibaba/work/faas/common/FaasInputs.class
+com/alibaba/work/faas/util/DingOpenApiUtil.class
+com/alibaba/work/faas/MainApplication.class
+com/alibaba/work/faas/util/YidaConnectorUtil.class
+com/alibaba/work/faas/util/YidaConnectorUtil$YidaResponse.class
+com/alibaba/work/faas/common/AbstractEntry.class
