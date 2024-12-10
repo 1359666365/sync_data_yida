@@ -91,11 +91,11 @@ public class FaasEntry extends AbstractEntry {
         try {
             String connectionUrl = "jdbc:sqlserver://61.164.45.210:14333;databaseName=SLMIDDLE;user=SLMIDDLE;password=Dingding@123.";
             Connection conn = DriverManager.getConnection(connectionUrl);
-			System.out.printf("Connected to SQL Server.");
+			System.out.println("Connected to SQL Server.");
 			return conn;
         } catch (SQLException e) {
             //logger.log(Level.SEVERE, "Failed to connect to sqlserver[61.164.45.210,14333], e: {0}", e.getMessage());
-			System.out.printf("Failed to connect to sqlserver[61.164.45.210,14333], e: {0}", e.getMessage());
+			System.out.println("Failed to connect to sqlserver[61.164.45.210,14333], e: " + e.getMessage());
             return null;
         }
     }
@@ -134,6 +134,8 @@ public class FaasEntry extends AbstractEntry {
             tableName, whereSearchCondition, orderCondition, pageNumber * pageSize, pageSize
         );
 
+		System.out.println("To execute sql: " + querySql);
+
 		Statement statement = globalDbConn.createStatement();
 		ResultSet resultSet = statement.executeQuery(querySql);
 		List<Map<String,Object>> resultList = new ArrayList<>();
@@ -147,6 +149,7 @@ public class FaasEntry extends AbstractEntry {
 		}
 
 		//业务处理
+		System.out.println("Result length: " + resultList.size());
 		return resultList;
 	}
 
