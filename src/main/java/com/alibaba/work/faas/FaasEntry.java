@@ -194,6 +194,9 @@ public class FaasEntry extends AbstractEntry {
 		if (orderClause.length() > 0) {
 			orderClause.setLength(orderClause.length() - 2); // 去掉最后一个逗号和空格
 		}
+		if (orderClause.length() == 0) {
+			orderClause.append("进厂时间").append(" ").append("DESC");
+		}
 		return orderClause.toString();
 	}
 
