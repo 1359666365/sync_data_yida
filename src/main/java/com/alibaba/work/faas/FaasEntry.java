@@ -69,16 +69,20 @@ public class FaasEntry extends AbstractEntry {
 		// }
 
 		//业务传的实际入参(如果您配置了参数映射(也就是点击了连接器工厂里的解析Body按钮并配置了各个参数描述和映射), 那么就是业务实际参数经过参数映射处理后的值)
+		System.out.println("1");
 		Map<String,Object> input = faasInputs.getInputs();
-
+		System.out.println("2");
 		JSONObject result = new JSONObject();
 		try {
+			System.out.println("3");
 			Object content = fetchData(input);
+			System.out.println("4");
 			result.put("success",true);
 			result.put("content",content);
 			result.put("error","");
 			return result;
 		} catch (Exception e) {
+			System.out.println("5");
 			result.put("success",false);
 			result.put("result",null);
 			result.put("error",e.getMessage());
@@ -104,6 +108,7 @@ public class FaasEntry extends AbstractEntry {
 		String tableName = (String)input.get("tableName");
 		Integer pageSize = (Integer)input.get("pageSize");
 		Integer pageNumber = (Integer)input.get("pageNumber");
+		System.out.println("7");
 		/* 搜索条件 format: 
 		[
 			{
@@ -123,10 +128,11 @@ public class FaasEntry extends AbstractEntry {
 		List< Map<String,String> > searchCondition = (List< Map<String,String> >)input.get("searchCondtion");
 		// format: {"numberField_adfeadffad":"-","gmt_create":"+"} 
 		Map<String,Object> orderConfigJson = (Map<String,Object>)input.get("orderConfigJson");
-
+		System.out.println("8");
 		String whereSearchCondition = parseSearchCondition(searchCondition);
+		System.out.println("10");
 		String orderCondition = parseOrderCondition(orderConfigJson);
-
+		System.out.println("9");
 		String querySql = String.format(
             "SELECT ID, 是否同步, 最后修改时间, 制单人, 备注, 车号, 品名, 收货单位, 司磅员, 原材料分类, 入库日期, 材料单价, " +
             "供应商名称, 运费单价, 供应商ID, 进厂时间, 出厂时间, 票号, 供应商票号, 签收重量, 供应商数量, 原材料结算单ID, " +
