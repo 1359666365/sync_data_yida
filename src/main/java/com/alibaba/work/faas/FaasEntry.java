@@ -41,6 +41,7 @@ public class FaasEntry extends AbstractEntry {
     @Override
     public JSONObject execute(FaasInputs faasInputs) {
 		System.out.println("faasInputs: " + JSON.toJSONString(faasInputs));
+		System.out.println("xx");
 		//填充宜搭工具类的上下文, 必须调用此方法!!! 请不要删除
 		initYidaUtil(faasInputs);
 
