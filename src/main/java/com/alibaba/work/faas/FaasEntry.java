@@ -83,7 +83,7 @@ public class FaasEntry extends AbstractEntry {
 			result.put("error","");
 			return result;
 		} catch (Exception e) {
-			System.out.println("5");
+			System.out.println("5: " + e.getMessage());
 			result.put("success",false);
 			result.put("result",null);
 			result.put("error",e.getMessage());
@@ -126,7 +126,7 @@ public class FaasEntry extends AbstractEntry {
 				"componentName": "SelectField"
 			}
 		]*/
-		List< Map<String,String> > searchCondition = (List< Map<String,String> >)input.get("searchCondtion");
+		List< Map<String,String> > searchCondition = (List< Map<String,String> >)input.get("searchCondition");
 		// format: {"numberField_adfeadffad":"-","gmt_create":"+"} 
 		Map<String,Object> orderConfigJson = (Map<String,Object>)input.get("orderConfigJson");
 		System.out.println("8");
