@@ -131,9 +131,9 @@ public class FaasEntry extends AbstractEntry {
 		Map<String,Object> orderConfigJson = (Map<String,Object>)input.get("orderConfigJson");
 		System.out.println("8");
 		String whereSearchCondition = parseSearchCondition(searchCondition);
-		System.out.println("10");
+		System.out.println("10: " + whereSearchCondition);
 		String orderCondition = parseOrderCondition(orderConfigJson);
-		System.out.println("9");
+		System.out.println("9: " + orderCondition);
 		String querySql = String.format(
             "SELECT ID, 是否同步, 最后修改时间, 制单人, 备注, 车号, 品名, 收货单位, 司磅员, 原材料分类, 入库日期, 材料单价, " +
             "供应商名称, 运费单价, 供应商ID, 进厂时间, 出厂时间, 票号, 供应商票号, 签收重量, 供应商数量, 原材料结算单ID, " +
