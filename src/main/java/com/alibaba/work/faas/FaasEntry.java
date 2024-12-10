@@ -1,9 +1,16 @@
 package com.alibaba.work.faas;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Objects;
 
 import com.alibaba.fastjson.JSON;
@@ -28,25 +35,27 @@ import org.apache.commons.lang3.StringUtils;
  * 
  **/
 public class FaasEntry extends AbstractEntry {
+
+	private static Connection globalDbConn = initDbConnection();
+
     @Override
     public JSONObject execute(FaasInputs faasInputs) {
 		System.out.println("faasInputs: " + JSON.toJSONString(faasInputs));
 		//填充宜搭工具类的上下文, 必须调用此方法!!! 请不要删除
 		initYidaUtil(faasInputs);
 
+		/*
 		//登录态里的钉钉userId
 		String userId = (String) faasInputs.getYidaContext().get("userId");
 		//登录态里的钉钉corpId
 		String corpId = (String) faasInputs.getYidaContext().get("corpId");
-
-		//业务传的实际入参(如果您配置了参数映射(也就是点击了连接器工厂里的解析Body按钮并配置了各个参数描述和映射), 那么就是业务实际参数经过参数映射处理后的值)
-		Map<String,Object> input = faasInputs.getInputs();
+		*/
 
 		/**
 		 * 示例1, 在doYourBusiness方法里编写您的业务代码, 也可以将业务代码封装到其他Class源文件或方法里, cloudIDE和您的本地IDE基本无区别。
 		 */
-		// JSONObject result = new JSONObject();
-		// try {
+		//JSONObject result = new JSONObject();
+		//try {
 		//    Object businessResult = doYourBusiness(input);
 		//    result.put("success",true);
 		//    result.put("result",businessResult);
@@ -59,49 +68,133 @@ public class FaasEntry extends AbstractEntry {
 		//    return result;
 		// }
 
-		/**
-		 *示例2, 调用宜搭连接器
-		 */
-		// JSONObject result = new JSONObject();
-		// try {
-		//    Object connectorResult = invokeYidaConnector(faasInputs);
-		//    result.put("success",true);
-		//    result.put("result",connectorResult);
-		//    result.put("error","");
-		//    return result;
-		// } catch (Exception e) {
-		//    result.put("success",false);
-		//    result.put("result",null);
-		//    result.put("error",e.getMessage());
-		//    return result;
-		// }
+		//业务传的实际入参(如果您配置了参数映射(也就是点击了连接器工厂里的解析Body按钮并配置了各个参数描述和映射), 那么就是业务实际参数经过参数映射处理后的值)
+		Map<String,Object> input = faasInputs.getInputs();
 
-		/**
-		 *示例3, 调用钉开放平台OpenAPI
-		 */
-		// JSONObject result = new JSONObject();
-		// try {
-		//    List<String> formInstanceIdList = invokeDingOpenApi();
-		//    result.put("success",true);
-		//    result.put("result",formInstanceIdList);
-		//    result.put("error","");
-		//    return result;
-		// } catch (Exception e) {
-		//    result.put("success",false);
-		//    result.put("result",null);
-		//    result.put("error",e.getMessage());
-		//    return result;
-		// }
-
-		/**
-		 * 返回的JSONObject并不是一定要带success、result、error, 下面的代码只是示例, 具体返回哪些key-value由您自己决定, 尽量与您在宜搭连接器工厂里配置的出参结构保持一致即可
-		 */
 		JSONObject result = new JSONObject();
-		result.put("success",true);
-		result.put("result","恭喜您, 成功调用宜搭FASS连接器!");
-		result.put("error","");
+		try {
+			Object content = fetchData(input);
+			result.put("success",true);
+			result.put("content",content);
+			result.put("error","");
+			return result;
+		} catch (Exception e) {
+			result.put("success",false);
+			result.put("result",null);
+			result.put("error",e.getMessage());
+			return result;
+		}
+	}
 
-		return result;
+	// 初始化数据库连接
+    public static Connection initDbConnection() {
+        try {
+            String connectionUrl = "jdbc:sqlserver://61.164.45.210:14333;databaseName=SLMIDDLE;user=SLMIDDLE;password=Dingding@123.";
+            Connection conn = DriverManager.getConnection(connectionUrl);
+			System.out.printf("Connected to SQL Server.");
+			return conn;
+        } catch (SQLException e) {
+            //logger.log(Level.SEVERE, "Failed to connect to sqlserver[61.164.45.210,14333], e: {0}", e.getMessage());
+			System.out.printf("Failed to connect to sqlserver[61.164.45.210,14333], e: {0}", e.getMessage());
+            return null;
+        }
+    }
+
+	private Object fetchData(Map<String,Object> input) throws Exception {
+		String tableName = (String)input.get("tableName");
+		Integer pageSize = (Integer)input.get("pageSize");
+		Integer pageNumber = (Integer)input.get("pageNumber");
+		/* 搜索条件 format: 
+		[
+			{
+				"key": "originator",
+				"value": "1732556623873244",
+				"type": "STRING",
+				"operator": "eq",
+				"componentName": "EmployeeField"
+			}, {
+				"key": "processApprovedResult",
+				"value": ["agree"],
+				"type": "ARRAY",
+				"operator": "in",
+				"componentName": "SelectField"
+			}
+		]*/
+		List< Map<String,String> > searchCondition = (List< Map<String,String> >)input.get("searchCondtion");
+		// format: {"numberField_adfeadffad":"-","gmt_create":"+"} 
+		Map<String,Object> orderConfigJson = (Map<String,Object>)input.get("orderConfigJson");
+
+		String whereSearchCondition = parseSearchCondition(searchCondition);
+		String orderCondition = parseOrderCondition(orderConfigJson);
+
+		String querySql = String.format(
+            "SELECT ID, 是否同步, 最后修改时间, 制单人, 备注, 车号, 品名, 收货单位, 司磅员, 原材料分类, 入库日期, 材料单价, " +
+            "供应商名称, 运费单价, 供应商ID, 进厂时间, 出厂时间, 票号, 供应商票号, 签收重量, 供应商数量, 原材料结算单ID, " +
+            "累计入库, 原材料类型, 金蝶原材料类型ID, 结算数量 FROM %s %s ORDER BY %s OFFSET %d ROWS FETCH NEXT %d ROWS ONLY;",
+            tableName, whereSearchCondition, orderCondition, pageNumber * pageSize, pageSize
+        );
+
+		Statement statement = globalDbConn.createStatement();
+		ResultSet resultSet = statement.executeQuery(querySql);
+		List<Map<String,Object>> resultList = new ArrayList<>();
+		while (resultSet.next()) {
+			Map<String,Object> row = new HashMap<>();
+			// column count从1开始
+			for (int i = 1; i <= resultSet.getMetaData().getColumnCount(); i++) {
+				row.put(resultSet.getMetaData().getColumnName(i), resultSet.getObject(i));
+			}
+			resultList.add(row);
+		}
+
+		//业务处理
+		return resultList;
+	}
+
+	private String parseSearchCondition(List<Map<String, String>> searchCondition) {
+		StringBuilder whereClause = new StringBuilder("WHERE ");
+		for (Map<String, String> condition : searchCondition) {
+			String key = condition.get("key");
+			String value = condition.get("value");
+			String type = condition.get("type");
+			String operator = condition.get("operator");
+
+			if ("STRING".equals(type)) {
+				whereClause.append(key).append(" ").append(operator).append(" '").append(value).append("' AND ");
+			} else if ("ARRAY".equals(type) && "in".equals(operator)) {
+				whereClause.append(key).append(" IN (");
+				String[] values = value.split(",");
+				for (String val : values) {
+					whereClause.append("'").append(val.trim()).append("',");
+				}
+				whereClause.setLength(whereClause.length() - 1); // 去掉最后一个逗号
+				whereClause.append(") AND ");
+			}
+			// 可以根据需要添加更多类型和操作符的处理
+		}
+		if (whereClause.length() > 6) {
+			whereClause.setLength(whereClause.length() - 5); // 去掉最后一个 " AND "
+		} else {
+			whereClause.setLength(0); // 如果没有条件，清空
+		}
+		return whereClause.toString();
+	}
+
+	private String parseOrderCondition(Map<String, Object> orderConfigJson) {
+		StringBuilder orderClause = new StringBuilder();
+		for (Map.Entry<String, Object> entry : orderConfigJson.entrySet()) {
+			String field = entry.getKey();
+			String direction = (String) entry.getValue();
+			if (direction == "+") {
+				direction = "asc";
+			} else if (direction == "-") {
+				direction = "desc";
+			}
+			orderClause.append(field).append(" ").append(direction).append(", ");
+		}
+		if (orderClause.length() > 0) {
+			orderClause.setLength(orderClause.length() - 2); // 去掉最后一个逗号和空格
+		}
+		return orderClause.toString();
 	}
 
 	/**
@@ -141,14 +234,14 @@ public class FaasEntry extends AbstractEntry {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object doYourBusiness(Map<String,Object> input) throws Exception{
+	/*private Object doYourBusiness(Map<String,Object> input) throws Exception{
 		//取实际的入参
 		String param1 = (String)input.get("参数1");
 		String param2 = (String)input.get("参数2");
 		String paramN = (String)input.get("参数N");
 		//业务处理
 		return "doYourBusiness成功";
-	}
+	}*/
 
 	/**
 	 * 示例 调用钉钉官方连接器(待办连接器, 创建待办)
